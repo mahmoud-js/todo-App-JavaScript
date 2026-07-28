@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <title>Todo App Final</title>
+   <style>
+      body {
+         background-color: cyan;
+      }
+   </style>
+</head>
+<body>
+   <h1>TEST INPUT</h1>
+   <input type="text" id="idinput">
+   <button id="butonid">Add Task</button>
+   <button id="btndel">Reset All</button>
+   <br>
+   <button id="isDonefalse">uncompleted</button>
+   <button id="isDonetrue">completed</button>
+   <button id="isDoneall">all tasks</button>
+   <p id="pisDoneall"></p>
+   <p id="pisDonefalse"></p>
+   <p id="pisDonetrue"></p>
+   <hr>
+   <p id="pid"></p>
+   <hr>
+   <input type="text" id="searchinput" placeholder="search tasks ... ">
+   <button id="searchbtn">Search</button>
+   <p id="searchp"></p>
+   <ul id="ulid"></ul>
+   <script>
+      // ۱. دریافت داده‌ها از حافظه
+      let ary = JSON.parse(localStorage.getItem("data-ary")) || [];
+      let currentFilter = 'all'; // مقادیر می‌تواند: 'all', 'completed', 'uncompleted' باشد
+      // ۲. انتخاب عناصر DOM
+      const input = document.querySelector("#idinput");
+      const btn = document.querySelector("#butonid");
+      const btndel = document.querySelector("#btndel");
+      const pid = document.querySelector("#pid");
+      const searchinput = document.querySelector("#searchinput");
+      const searchbtn = document.querySelector("#searchbtn");
+      const searchp = document.querySelector("#searchp");
+      const ul = document.querySelector("#ulid");
+      const isDoneall = document.querySelector("#isDoneall");
+      const isDonetrue = document.querySelector("#isDonetrue");
+      const isDonefalse = document.querySelector("#isDonefalse");
+      const pisDonetrue = document.querySelector("#pisDonetrue");
+      const pisDonefalse = document.querySelector("#pisDonefalse");
+      const pisDoneall = document.querySelector("#pisDoneall");
+      // ۳. تابع اصلی برای به‌روزرسانی و رندر کردن
+      function updateAndRender() {
+         console.log("Current Tasks State:", currentFilter);
+         // ۱. ذخیره در حافظه
+         localStorage.setItem("data-ary", JSON.stringify(ary));
+         // ۲. شروع کار با یک کپی از کل آرایه
+         let result = [...ary];
+         // ۳. فیلتر کردن بر اساس جستجو (اگر چیزی تایپ شده)
+         const searchin = searchinput.value.trim().toLowerCase();
+         if (searchin !== "") {
+            result = result.filter(item => item.name.toLowerCase().includes(searchin));
+            searchp.textContent = "Found: " + result.length;
+         } else {
+            searchp.textContent = "";
+         }
+         // ۴. فیلتر کردن بر اساس وضعیت (isDone)
+         if (currentFilter === 'completed') {
+            result = result.filter(task => task.isDone === true);
+         } else if (currentFilter === 'uncompleted') {
+            result = result.filter(task => task.isDone === false);
+         }
+         // ۵. رندر نهایی (فقط یک بار!)
+         render(result);
+      }
+      // ۴. تابع رندر که آرایه ورودی را دریافت می‌کند
+      function render(tasksToRender) {
+         ul.innerHTML = "";
+         pid.textContent = "Array: " + JSON.stringify(ary);
+         tasksToRender.forEach(function(item) {
+            const li = document.createElement("li");
+            const span = document.createElement("span");
+            const delitem = document.createElement("button");
+            const edited = document.createElement("button");
+            span.textContent = item.name;
+            delitem.textContent = "Delete";
+            edited.textContent = "Edit";
+            span.style.textDecoration = item.isDone ? "line-through": "none";
+            span.style.color = item.isDone?"red": "blue";
+            delitem.style.margin = "10px";
+            edited.style.margin = "10px";
+            // کلیک روی متن برای تغییر وضعیت
+            span.addEventListener("click", function() {
+               item.isDone = !item.isDone;
+               updateAndRender();
+            });
+            // دکمه حذف (اصلاح شده با استفاده از ID)
+            delitem.addEventListener("click", function() {
+               if (confirm("Do you want to delete this item?")) {
+                  const targetIndex = ary.findIndex(function(t) {
+                     return t.id === item.id;
+                  });
+                  if (targetIndex !== -1) {
+                     ary.splice(targetIndex, 1);
+                     updateAndRender();
+                  }
+               }
+            });
+            // دکمه ویرایش
+            edited.addEventListener("click",
+               function() {
+                  span.style.display = "none";
+                  edited.style.display = "none";
+                  const editinput = document.createElement("input");
+                  const savebtn = document.createElement("button");
+                  editinput.value = item.name;
+                  savebtn.textContent = "Save";
+                  li.appendChild(editinput);
+                  li.appendChild(savebtn);
+                  savebtn.addEventListener("click", function() {
+                     const newValue = editinput.value.trim();
+                     if (newValue === "") return;
+                     const targetItem = ary.find(function(t) {
+                        return t.id === item.id;
+                     });
+                     targetItem.name = newValue;
+                     updateAndRender();
+                  });
+               });
+            li.appendChild(span);
+            li.appendChild(delitem);
+            li.appendChild(edited);
+            ul.appendChild(li);
+         });
+      }
+      // ۵. رویدادهای مستقل
+      // ۵. رویدادهای مستقل
+      btn.addEventListener("click", function() {
+         const textinp = input.value.trim();
+         if (textinp === "") {
+            input.style.borderColor = "red";
+            input.placeholder = "inter a text !";
+            setTimeout(function() {
+               input.style.borderColor = "";
+               input.placeholder = "text";
+            }, 1000);
+            return;
+         }
+         const isDuplicate = ary.some(function(task) {
+            return task.name.toLowerCase() === textinp.toLowerCase();
+         });
+         if (isDuplicate) {
+            alert("the text there is ");
+            input.value = "";
+            input.focus();
+            return;
+         }
+         ary.push({
+            id: Date.now(),
+            name: textinp,
+            isDone: false
+         });
+         input.value = "";
+         input.focus();
+         updateAndRender();
+      });
+      searchbtn.addEventListener("click", function() {
+         const searching = searchinput.value.trim();
+         if (searching === "") {
+            searchinput.style.borderColor = "red";
+            searchinput.placeholder = "inter a text for search";
+            setTimeout(function() {
+               searchinput.style.borderColor = "";
+               searchinput.placeholder = "search";
+            }, 1000);
+            return;
+         }
+         const isdoublicat = ary.some(function(item) {
+            return item.name.toLowerCase() === searchinput.value.toLowerCase().trim();
+         });
+         if (isdoublicat) {
+            alert("your intered text corect !!");
+         }
+         if (!isdoublicat && isdoublicat !== "") {
+            alert("oops ");
+         }
+         updateAndRender();
+      });
+      btndel.addEventListener("click", function() {
+         if (confirm("Are you sure?")) {
+            ary = [];
+            updateAndRender();
+         }
+      });
+      // دکمه‌های فیلتر
+      isDoneall.addEventListener("click", function() {
+         currentFilter = "all";
+         console.log("Filter changed to: all"); // برای تست بهتر
+         updateAndRender();
+      });
+      isDonetrue.addEventListener("click", function() {
+         currentFilter = "completed";
+         console.log("Filter changed to: completed"); // برای تست بهتر
+         updateAndRender();
+      });
+      isDonefalse.addEventListener("click", function() {
+         currentFilter = "uncompleted";
+         console.log("Filter changed to: uncompleted"); // برای تست بهتر
+         updateAndRender();
+      });
+      // اولین اجرا
+      // اصلاح بسیار مهم: به جای رندر مستقیم، از خط لوله استفاده کن
+      updateAndRender();
+   </script>
+</body>
+</html>
